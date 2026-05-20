@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "653413431655",
+    "project_id": "gymvision-3e177",
+    "storage_bucket": "gymvision-3e177.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:653413431655:android:8a3d84357e64f3517017c2",
+        "android_client_info": {
+          "package_name": "com.example.gymvision"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCxr-eig5t4i_xDs3UNBmrSObVos4-uXqk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
