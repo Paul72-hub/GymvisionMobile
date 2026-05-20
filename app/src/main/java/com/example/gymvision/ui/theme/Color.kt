@@ -3,7 +3,7 @@ package com.example.gymvision.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // Couleur principale (violet du Figma)
-val PrimaryPurple = Color(0xFF6650A4)
+val PrimaryPurple = Color(0xFF615DDB)
 val PrimaryPurpleLight = Color(0xFFEDE7F6)
 
 // Fonds

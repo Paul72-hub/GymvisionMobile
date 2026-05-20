@@ -20,6 +20,13 @@ object Routes {
     const val EXERCICE_COMMENCE = "exercice_commence/{exerciceId}"
 }
 
+private fun NavHostController.toAccueil() {
+    navigate(Routes.ACCUEIL) {
+        popUpTo(Routes.ACCUEIL) { inclusive = false }
+        launchSingleTop = true
+    }
+}
+
 @Composable
 fun AppNavigation(navController: NavHostController) {
     NavHost(navController = navController, startDestination = Routes.ACCUEIL) {
@@ -34,23 +41,23 @@ fun AppNavigation(navController: NavHostController) {
 
         composable(Routes.RECHERCHER) {
             RechercherScreen(
-                onNavigateToDetailExercice = { id ->
-                    navController.navigate("detail_exercice/$id")
-                }
+                onNavigateToDetailExercice = { id -> navController.navigate("detail_exercice/$id") },
+                onNavigateToAccueil = { navController.toAccueil() }
             )
         }
 
         composable(Routes.SEANCES) {
             SeancesScreen(
-                onNavigateToDetailSeance = { id ->
-                    navController.navigate("detail_seance/$id")
-                },
-                onNavigateToNouvelleSeance = { navController.navigate(Routes.NOUVELLE_SEANCE) }
+                onNavigateToDetailSeance = { id -> navController.navigate("detail_seance/$id") },
+                onNavigateToNouvelleSeance = { navController.navigate(Routes.NOUVELLE_SEANCE) },
+                onRetour = { navController.popBackStack() }
             )
         }
 
         composable(Routes.PROFIL) {
-            ProfilScreen()
+            ProfilScreen(
+                onNavigateToAccueil = { navController.toAccueil() }
+            )
         }
 
         composable(Routes.FAVORIS) {
