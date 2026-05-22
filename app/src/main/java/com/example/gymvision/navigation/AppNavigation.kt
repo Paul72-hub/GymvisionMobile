@@ -1,12 +1,17 @@
 package com.example.gymvision.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.gymvision.ui.screens.*
+import com.google.firebase.auth.FirebaseAuth
 
 object Routes {
     const val ACCUEIL = "accueil"
@@ -15,6 +20,7 @@ object Routes {
     const val PROFIL = "profil"
     const val FAVORIS = "favoris"
     const val NOUVELLE_SEANCE = "nouvelle_seance"
+    const val QR_SCANNER = "qr_scanner"
     const val DETAIL_SEANCE = "detail_seance/{seanceId}"
     const val DETAIL_EXERCICE = "detail_exercice/{exerciceId}"
     const val EXERCICE_COMMENCE = "exercice_commence/{exerciceId}"
@@ -35,7 +41,15 @@ fun AppNavigation(navController: NavHostController) {
             AccueilScreen(
                 onNavigateToSeances = { navController.navigate(Routes.SEANCES) },
                 onNavigateToRechercher = { navController.navigate(Routes.RECHERCHER) },
-                onNavigateToFavoris = { navController.navigate(Routes.FAVORIS) }
+                onNavigateToFavoris = { navController.navigate(Routes.FAVORIS) },
+                onNavigateToQrScanner = { navController.navigate(Routes.QR_SCANNER) }
+            )
+        }
+
+        composable(Routes.QR_SCANNER) {
+            QrScannerScreen(
+                onQrCodeDetected = { id -> navController.navigate("detail_exercice/$id") },
+                onRetour = { navController.popBackStack() }
             )
         }
 
@@ -61,11 +75,18 @@ fun AppNavigation(navController: NavHostController) {
         }
 
         composable(Routes.FAVORIS) {
-            FavorisScreen(
-                onRetour = { navController.popBackStack() },
-                onNavigateToDetailExercice = { id -> navController.navigate("detail_exercice/$id") },
-                onNavigateToDetailSeance = { id -> navController.navigate("detail_seance/$id") }
-            )
+            val auth = remember { FirebaseAuth.getInstance() }
+            var isLoggedIn by remember { mutableStateOf(auth.currentUser != null) }
+
+            if (!isLoggedIn) {
+                LoginScreen(onLoginSuccess = { isLoggedIn = true })
+            } else {
+                FavorisScreen(
+                    onRetour = { navController.popBackStack() },
+                    onNavigateToDetailExercice = { id -> navController.navigate("detail_exercice/$id") },
+                    onNavigateToDetailSeance = { id -> navController.navigate("detail_seance/$id") }
+                )
+            }
         }
 
         composable(Routes.NOUVELLE_SEANCE) {

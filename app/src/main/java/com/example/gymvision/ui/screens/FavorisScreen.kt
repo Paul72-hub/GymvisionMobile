@@ -22,33 +22,26 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.gymvision.data.model.Seance
 import com.example.gymvision.ui.theme.LocalAppDimensions
 import com.example.gymvision.ui.theme.TextPrimary
 import com.example.gymvision.ui.theme.TextSecondary
-
-private data class FavoriExercice(val id: Int, val nom: String)
-private data class FavoriSeance(val id: Int, val nom: String, val icon: ImageVector, val iconBg: Color, val iconTint: Color)
-
-private val mockFavExercices = listOf(
-    FavoriExercice(2, "Rowing machine"),
-    FavoriExercice(3, "Curl haltères"),
-    FavoriExercice(4, "Curl pupitre"),
-)
-private val mockFavSeances = listOf(
-    FavoriSeance(1, "Dos & Biceps", Icons.Default.FitnessCenter, Color(0xFFDCEEFD), Color(0xFF1976D2)),
-    FavoriSeance(3, "Pectoraux",    Icons.Default.Favorite,      Color(0xFFFFE4E8), Color(0xFFE53935)),
-)
+import com.example.gymvision.ui.viewmodel.FavorisViewModel
 
 @Composable
 fun FavorisScreen(
     onRetour: () -> Unit,
     onNavigateToDetailExercice: (Int) -> Unit,
-    onNavigateToDetailSeance: (Int) -> Unit
+    onNavigateToDetailSeance: (Int) -> Unit,
+    viewModel: FavorisViewModel = viewModel()
 ) {
     val dims = LocalAppDimensions.current
     var tabSelectionne by remember { mutableIntStateOf(0) }
+    val favorisExercices by viewModel.getFavorisExercices().collectAsState(initial = emptyList())
+    val favorisSeances by viewModel.getFavorisSeances().collectAsState(initial = emptyList())
 
     Column(
         modifier = Modifier
@@ -102,62 +95,100 @@ fun FavorisScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (tabSelectionne == 0) {
-            // Onglet Exercices
+            // Onglet Exercices — données réelles depuis Room
             Text(
-                text = "Mes favoris(${mockFavExercices.size})",
+                text = "Mes favoris (${favorisExercices.size})",
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextSecondary
             )
             Spacer(modifier = Modifier.height(12.dp))
-            mockFavExercices.forEach { fav ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onNavigateToDetailExercice(fav.id) }
-                        .padding(vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
+
+            if (favorisExercices.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surface)
+                    Text(
+                        text = "Aucun favori pour l'instant.\nAppuyez sur ♥ dans un exercice pour l'ajouter.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary,
+                        textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Text(fav.nom, style = MaterialTheme.typography.bodyMedium, color = TextPrimary, modifier = Modifier.weight(1f))
-                    Icon(Icons.Default.MoreVert, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
                 }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+            } else {
+                favorisExercices.forEach { exercice ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onNavigateToDetailExercice(exercice.id) }
+                            .padding(vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surface),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Favorite, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(exercice.nom, style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                            Text(exercice.muscle, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                        }
+                        Icon(Icons.Default.MoreVert, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                }
             }
         } else {
-            // Onglet Séances
+            // Onglet Séances — données réelles depuis Room
             Text(
-                text = "Mes favoris(${mockFavSeances.size})",
+                text = "Mes favoris (${favorisSeances.size})",
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextSecondary
             )
             Spacer(modifier = Modifier.height(12.dp))
-            mockFavSeances.forEach { fav ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(MaterialTheme.shapes.medium)
-                        .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium)
-                        .clickable { onNavigateToDetailSeance(fav.id) }
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
+
+            if (favorisSeances.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 40.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier.size(36.dp).clip(MaterialTheme.shapes.extraSmall).background(fav.iconBg),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(fav.icon, contentDescription = null, tint = fav.iconTint, modifier = Modifier.size(20.dp))
-                    }
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Text(fav.nom, style = MaterialTheme.typography.titleMedium, color = TextPrimary, modifier = Modifier.weight(1f))
-                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+                    Text(
+                        text = "Aucun favori pour l'instant.\nAppuyez sur ♥ dans une séance pour l'ajouter.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary,
+                        textAlign = TextAlign.Center
+                    )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+            } else {
+                favorisSeances.forEach { seance ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.medium)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium)
+                            .clickable { onNavigateToDetailSeance(seance.id) }
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier.size(36.dp).clip(MaterialTheme.shapes.extraSmall)
+                                .background(MaterialTheme.colorScheme.surface),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.FitnessCenter, contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Text(seance.nom, style = MaterialTheme.typography.titleMedium, color = TextPrimary, modifier = Modifier.weight(1f))
+                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
         }
 

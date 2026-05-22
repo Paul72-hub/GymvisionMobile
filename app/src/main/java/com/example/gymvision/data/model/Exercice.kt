@@ -8,8 +8,9 @@ data class Exercice(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val nom: String,
     val description: String,
-    val muscle: String,        // ex: Dos, Pectoraux
-    val niveau: String,        // ex: Débutant, Intermédiaire, Confirmé
+    val muscle: String,
+    val niveau: String,
     val conseils: String,      // conseils de posture séparés par ;
+    val youtubeVideoId: String = "",
     val isFavori: Boolean = false
 )

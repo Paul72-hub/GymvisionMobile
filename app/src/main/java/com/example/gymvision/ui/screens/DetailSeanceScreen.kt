@@ -8,10 +8,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,9 +22,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gymvision.ui.theme.LocalAppDimensions
 import com.example.gymvision.ui.theme.TextPrimary
 import com.example.gymvision.ui.theme.TextSecondary
+import com.example.gymvision.ui.viewmodel.FavorisViewModel
 
 // Mock data — sera remplacé par Room
 private data class SeanceDetail(
@@ -46,10 +51,12 @@ private val mockSeances = mapOf(
 fun DetailSeanceScreen(
     seanceId: Int,
     onRetour: () -> Unit,
-    onNavigateToDetailExercice: (Int) -> Unit
+    onNavigateToDetailExercice: (Int) -> Unit,
+    favorisViewModel: FavorisViewModel = viewModel()
 ) {
     val dims = LocalAppDimensions.current
     val seance = mockSeances[seanceId] ?: mockSeances[1]!!
+    val isFavori by favorisViewModel.isFavoriSeance(seanceId).collectAsState(initial = false)
 
     Box(
         modifier = Modifier
@@ -74,8 +81,12 @@ fun DetailSeanceScreen(
                         color = TextPrimary,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(onClick = {}) {
-                        Icon(Icons.Default.FavoriteBorder, contentDescription = "Favoris", tint = TextPrimary)
+                    IconButton(onClick = { favorisViewModel.toggleFavoriSeance(seanceId) }) {
+                        Icon(
+                            imageVector = if (isFavori) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Favoris",
+                            tint = if (isFavori) MaterialTheme.colorScheme.primary else TextPrimary
+                        )
                     }
                 }
             }
@@ -121,7 +132,7 @@ fun DetailSeanceScreen(
                         numero = index + 1,
                         nom = exercice,
                         isFirst = index == 0,
-                        onClick = { onNavigateToDetailExercice(index + 1) }
+                        onClick = { onNavigateToDetailExercice((seanceId - 1) * 4 + index + 1) }
                     )
                     if (index < seance.exercices.lastIndex) {
                         HorizontalDivider(

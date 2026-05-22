@@ -29,7 +29,8 @@ import com.example.gymvision.ui.theme.TextSecondary
 fun AccueilScreen(
     onNavigateToSeances: () -> Unit,
     onNavigateToRechercher: () -> Unit,
-    onNavigateToFavoris: () -> Unit
+    onNavigateToFavoris: () -> Unit,
+    onNavigateToQrScanner: () -> Unit = {}
 ) {
     val dims = LocalAppDimensions.current
     var searchQuery by remember { mutableStateOf("") }
@@ -90,7 +91,7 @@ fun AccueilScreen(
             iconTint = Color(0xFF1976D2),
             title = "Scanner QR code",
             description = "Découvrez comment utiliser une machine instantanément.",
-            onClick = {}
+            onClick = onNavigateToQrScanner
         )
         Spacer(modifier = Modifier.height(dims.cardSpacing))
         AccueilCard(

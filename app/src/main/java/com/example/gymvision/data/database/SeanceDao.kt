@@ -35,4 +35,7 @@ interface SeanceDao {
 
     @Delete
     suspend fun deleteSeanceExercice(seanceExercice: SeanceExercice)
+
+    @Query("SELECT COUNT(*) FROM seances")
+    suspend fun count(): Int
 }
