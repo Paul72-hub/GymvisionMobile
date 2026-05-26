@@ -5,9 +5,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
@@ -17,52 +17,60 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gymvision.ui.components.LogoGV
 import com.example.gymvision.ui.theme.LocalAppDimensions
 import com.example.gymvision.ui.theme.TextPrimary
 import com.example.gymvision.ui.theme.TextSecondary
+import com.example.gymvision.ui.viewmodel.RechercherViewModel
 
-private val muscles = listOf("Dos", "Pectoraux", "Biceps", "Triceps", "Jambes", "Épaules")
+private val muscles = listOf("Dos", "Pectoraux", "Biceps", "Épaules", "Jambes", "Abdos")
 private val niveaux = listOf("Débutant", "Intermédiaire", "Confirmé")
-private val mockExercices = listOf(
-    Pair(1, "Tirage Poulie Haute"),
-    Pair(2, "Développé couché"),
-    Pair(3, "Rowing machine"),
-    Pair(4, "Curl haltères"),
-)
 
 @Composable
 fun RechercherScreen(
     onNavigateToDetailExercice: (Int) -> Unit,
-    onNavigateToAccueil: () -> Unit
+    onNavigateToAccueil: () -> Unit,
+    selectionMode: Boolean = false,
+    onExerciceSelectionne: ((Int) -> Unit)? = null,
+    viewModel: RechercherViewModel = viewModel()
 ) {
     val dims = LocalAppDimensions.current
     var searchQuery by remember { mutableStateOf("") }
     val selectedMuscles = remember { mutableStateListOf<String>() }
     var selectedNiveau by remember { mutableStateOf<String?>(null) }
 
+    val tousExercices by viewModel.exercices.collectAsState(initial = emptyList())
+
+    val resultats = remember(tousExercices, searchQuery, selectedMuscles.toList(), selectedNiveau) {
+        tousExercices.filter { exo ->
+            val matchSearch = searchQuery.isBlank() || exo.nom.contains(searchQuery, ignoreCase = true)
+            val matchMuscle = selectedMuscles.isEmpty() || selectedMuscles.any { exo.muscle.contains(it, ignoreCase = true) }
+            val matchNiveau = selectedNiveau == null || exo.niveau.equals(selectedNiveau, ignoreCase = true)
+            matchSearch && matchMuscle && matchNiveau
+        }
+    }
+
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = dims.horizontalPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 84.dp)
+                .padding(bottom = if (selectionMode) 0.dp else 84.dp)
         ) {
             Spacer(modifier = Modifier.height(dims.sectionSpacing))
 
-            // Top bar
             Row(verticalAlignment = Alignment.CenterVertically) {
-                LogoGV(onClick = onNavigateToAccueil)
-                Spacer(modifier = Modifier.width(10.dp))
+                if (!selectionMode) {
+                    LogoGV(onClick = onNavigateToAccueil)
+                    Spacer(modifier = Modifier.width(10.dp))
+                }
                 Text(
-                    text = "Rechercher",
+                    text = if (selectionMode) "Choisir un exercice" else "Rechercher",
                     style = MaterialTheme.typography.titleLarge,
                     color = TextPrimary
                 )
@@ -70,7 +78,6 @@ fun RechercherScreen(
 
             Spacer(modifier = Modifier.height(dims.sectionSpacing))
 
-            // Barre de recherche
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -89,7 +96,6 @@ fun RechercherScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Section Filtre
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Tune, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
@@ -98,39 +104,35 @@ fun RechercherScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Muscle ciblé
             Text(text = "Muscle ciblé", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
             Spacer(modifier = Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                muscles.take(2).forEach { muscle ->
-                    val selected = muscle in selectedMuscles
-                    Row(
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.small)
-                            .border(1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small)
-                            .background(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
-                            .clickable {
-                                if (selected) selectedMuscles.remove(muscle)
-                                else selectedMuscles.add(muscle)
-                            }
-                            .padding(horizontal = 16.dp, vertical = 10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Checkbox(
-                            checked = selected,
-                            onCheckedChange = null,
-                            modifier = Modifier.size(16.dp),
-                            colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(muscle, style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+
+            // Grille de 3 colonnes pour les muscles
+            val muscleRows = muscles.chunked(3)
+            muscleRows.forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { muscle ->
+                        val selected = muscle in selectedMuscles
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(MaterialTheme.shapes.small)
+                                .border(1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline, MaterialTheme.shapes.small)
+                                .background(if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                                .clickable { if (selected) selectedMuscles.remove(muscle) else selectedMuscles.add(muscle) }
+                                .padding(horizontal = 8.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(muscle, style = MaterialTheme.typography.bodySmall, color = TextPrimary)
+                        }
                     }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Niveau de difficulté
             Text(text = "Niveau de difficulté", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
             Spacer(modifier = Modifier.height(10.dp))
             niveaux.forEach { niveau ->
@@ -158,55 +160,49 @@ fun RechercherScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Section Résultats
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Search, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Résultats", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                Text(
+                    text = "Résultats (${resultats.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = TextPrimary
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            val resultats = if (searchQuery.isBlank() && selectedMuscles.isEmpty() && selectedNiveau == null)
-                mockExercices
-            else
-                mockExercices.filter { (_, nom) ->
-                    nom.contains(searchQuery, ignoreCase = true)
-                }
-
-            resultats.forEach { (id, nom) ->
+            resultats.forEach { exo ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(MaterialTheme.shapes.medium)
                         .border(1.dp, MaterialTheme.colorScheme.outline, MaterialTheme.shapes.medium)
-                        .clickable { onNavigateToDetailExercice(id) }
+                        .clickable {
+                            if (selectionMode) {
+                                onExerciceSelectionne?.invoke(exo.id)
+                            } else {
+                                onNavigateToDetailExercice(exo.id)
+                            }
+                        }
                         .padding(horizontal = 16.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(nom, style = MaterialTheme.typography.bodyMedium, color = TextPrimary, modifier = Modifier.weight(1f))
-                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(20.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(exo.nom, style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                        Text(exo.muscle, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                    }
+                    Icon(
+                        imageVector = if (selectionMode) Icons.Default.Add else Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = if (selectionMode) MaterialTheme.colorScheme.primary else TextSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
-        }
 
-        // Bouton fixe
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = dims.horizontalPadding, vertical = 16.dp)
-        ) {
-            Button(
-                onClick = {},
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = MaterialTheme.shapes.extraLarge,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-            ) {
-                Text("Appliquer les filtres", style = MaterialTheme.typography.labelLarge)
-            }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

@@ -1,6 +1,8 @@
 package com.example.gymvision.ui.screens
 
+import android.content.Intent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -12,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -41,7 +44,9 @@ private val mockSessions = mapOf(
 @Composable
 fun ExerciceCommenceScreen(
     exerciceId: Int,
-    onRetour: () -> Unit
+    onRetour: () -> Unit,
+    onSuivant: (() -> Unit)? = null,
+    dernierExercice: Boolean = false
 ) {
     val dims = LocalAppDimensions.current
     val session = mockSessions[exerciceId] ?: mockSessions[1]!!
@@ -174,11 +179,19 @@ fun ExerciceCommenceScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // Bouton Visualiser AR
+                val context = LocalContext.current
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(MaterialTheme.shapes.medium)
                         .background(DarkCard)
+                        .clickable {
+                            val intent = context.packageManager
+                                .getLaunchIntentForPackage("com.unity.template.ar_mobile")
+                            if (intent != null) {
+                                context.startActivity(intent)
+                            }
+                        }
                         .padding(vertical = 16.dp),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
@@ -208,7 +221,7 @@ fun ExerciceCommenceScreen(
                 .padding(horizontal = dims.horizontalPadding, vertical = 16.dp)
         ) {
             Button(
-                onClick = onRetour,
+                onClick = { if (onSuivant != null) onSuivant() else onRetour() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -216,7 +229,11 @@ fun ExerciceCommenceScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text(
-                    text = "Terminer la série",
+                    text = when {
+                        onSuivant == null -> "Terminer la série"
+                        dernierExercice -> "Terminer la séance"
+                        else -> "Exercice suivant"
+                    },
                     style = MaterialTheme.typography.labelLarge
                 )
             }

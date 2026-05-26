@@ -78,10 +78,14 @@ fun GymvisionApp() {
                             label = { Text(item.label) },
                             selected = currentRoute == item.route,
                             onClick = {
-                                navController.navigate(item.route) {
-                                    popUpTo(Routes.ACCUEIL) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
+                                if (item.route == Routes.ACCUEIL) {
+                                    navController.popBackStack(Routes.ACCUEIL, false)
+                                } else {
+                                    navController.navigate(item.route) {
+                                        popUpTo(Routes.ACCUEIL) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
                             }
                         )

@@ -26,7 +26,7 @@ interface ExerciceDao {
     fun getFavoris(): Flow<List<Exercice>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(exercice: Exercice)
+    suspend fun insert(exercice: Exercice): Long
 
     @Update
     suspend fun update(exercice: Exercice)

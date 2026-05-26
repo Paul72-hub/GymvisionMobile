@@ -30,10 +30,10 @@ fun AccueilScreen(
     onNavigateToSeances: () -> Unit,
     onNavigateToRechercher: () -> Unit,
     onNavigateToFavoris: () -> Unit,
-    onNavigateToQrScanner: () -> Unit = {}
+    onNavigateToQrScanner: () -> Unit = {},
+    onNavigateToProfil: () -> Unit = {}
 ) {
     val dims = LocalAppDimensions.current
-    var searchQuery by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -58,29 +58,33 @@ fun AccueilScreen(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
-            TextButton(onClick = {}) {
+            TextButton(onClick = onNavigateToProfil) {
                 Text("Se connecter", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             }
         }
 
         Spacer(modifier = Modifier.height(dims.sectionSpacing))
 
-        // Barre de recherche
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text("Rechercher un exercice...", style = MaterialTheme.typography.bodyMedium, color = TextSecondary) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.small,
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedContainerColor = MaterialTheme.colorScheme.surface
-            ),
-            singleLine = true
-        )
+        // Barre de recherche (raccourci vers RechercherScreen)
+        Box(modifier = Modifier.fillMaxWidth().clickable { onNavigateToRechercher() }) {
+            OutlinedTextField(
+                value = "",
+                onValueChange = {},
+                enabled = false,
+                placeholder = { Text("Rechercher un exercice...", style = MaterialTheme.typography.bodyMedium, color = TextSecondary) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.small,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledContainerColor = MaterialTheme.colorScheme.surface,
+                    disabledPlaceholderColor = TextSecondary,
+                    disabledLeadingIconColor = TextSecondary,
+                    disabledTextColor = TextPrimary
+                ),
+                singleLine = true
+            )
+        }
 
         Spacer(modifier = Modifier.height(dims.sectionSpacing + 8.dp))
 
